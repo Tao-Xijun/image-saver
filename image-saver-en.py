@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-剪贴板图片保存器
-支持多格式 & 自定义分辨率
 Clipboard Image Saver
 Supports multiple formats & custom resolution
 """
@@ -17,12 +15,12 @@ import pathlib
 from PIL import Image, ImageGrab
 import pyperclip
 
-APP_NAME = "剪贴板图片保存器"
+APP_NAME = "Clipboard Image Saver"
 CONFIG_FILE = pathlib.Path.home() / ".clipboard_saver.json"
 DEFAULT_DIR = pathlib.Path.home() / "Downloads"
 
 FORMATS = {
-    "PNG":  ("png",  True),   # 后缀, 是否支持无损  # Extension, lossless support
+    "PNG":  ("png",  True),   # Extension, lossless support
     "JPG":  ("jpg",  False),
     "JPEG": ("jpeg", False),
     "BMP":  ("bmp",  True),
@@ -31,10 +29,9 @@ FORMATS = {
     "GIF":  ("gif",  False),
 }
 
-# ---------- 工具 ---------- 
 # ---------- Utilities ----------
 def load_config():
-    # 读取配置文件 / Load config file
+    # Load config file
     if CONFIG_FILE.exists():
         try:
             return json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
@@ -43,21 +40,21 @@ def load_config():
     return {"last_dir": str(DEFAULT_DIR)}
 
 def save_config(cfg):
-    # 保存配置文件 / Save config file
+    # Save config file
     try:
         CONFIG_FILE.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8")
     except Exception as e:
-        print("保存配置失败:", e)  # Failed to save config
+        print("Failed to save config:", e)
 
 def get_clipboard_image():
-    # 获取剪贴板图片 / Get image from clipboard
+    # Get image from clipboard
     try:
         im = ImageGrab.grabclipboard()
     except Exception:
         im = None
     return im
 
-# ---------- GUI ---------- 
+# ---------- GUI ----------
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -78,112 +75,110 @@ class App(tk.Tk):
         self.after(100, self.check_clipboard)
 
     def init_ui(self):
-        # 标题 / Title
+        # Title
         ttk.Label(self, text=APP_NAME, font=("Segoe UI", 14, "bold")).pack()
 
-        # 剪贴板状态 / Clipboard status
-        self.status_lbl = ttk.Label(self, text="正在检查剪贴板…", foreground="blue")
+        # Clipboard status
+        self.status_lbl = ttk.Label(self, text="Checking clipboard…", foreground="blue")
         self.status_lbl.pack(pady=5)
 
-        # 保存路径 / Save directory
+        # Save directory
         frm = ttk.Frame(self)
         frm.pack(fill="x", pady=5)
-        ttk.Label(frm, text="保存到：").pack(side="left")  # Save to:
+        ttk.Label(frm, text="Save to:").pack(side="left")
         ttk.Entry(frm, textvariable=self.save_dir, width=35).pack(side="left", padx=5)
-        ttk.Button(frm, text="浏览…", command=self.choose_dir).pack(side="left")  # Browse...
+        ttk.Button(frm, text="Browse…", command=self.choose_dir).pack(side="left")
 
-        # 文件名 / File name
+        # File name
         frm = ttk.Frame(self)
         frm.pack(fill="x", pady=5)
-        ttk.Label(frm, text="文件名：").pack(side="left")  # File name:
+        ttk.Label(frm, text="File name:").pack(side="left")
         ttk.Entry(frm, textvariable=self.file_name, width=25).pack(side="left", padx=5)
-        ttk.Label(frm, text="（留空用时间戳）").pack(side="left")  # (Leave blank to use timestamp)
+        ttk.Label(frm, text="(Leave blank to use timestamp)").pack(side="left")
 
-        # 格式 / Format
-        frm = ttk.LabelFrame(self, text="格式")  # Format
+        # Format
+        frm = ttk.LabelFrame(self, text="Format")
         frm.pack(fill="x", pady=5)
         fmt_combo = ttk.Combobox(frm, textvariable=self.fmt_name,
                                  values=list(FORMATS.keys()), state="readonly", width=10)
         fmt_combo.pack(side="left", padx=5)
         self.fmt_name.trace_add("write", self.on_fmt_change)
 
-        # 分辨率 / Resolution
-        frm = ttk.LabelFrame(self, text="分辨率")  # Resolution
+        # Resolution
+        frm = ttk.LabelFrame(self, text="Resolution")
         frm.pack(fill="x", pady=5)
         self.res_frm = frm
         self.build_resize_ui()
 
-        # 保存按钮 / Save button
-        self.btn_save = ttk.Button(self, text="保存图片", command=self.save_image)
+        # Save button
+        self.btn_save = ttk.Button(self, text="Save Image", command=self.save_image)
         self.btn_save.pack(pady=10)
         self.btn_save.state(["disabled"])
 
     def build_resize_ui(self):
-        # 先清空 / Clear previous widgets
+        # Clear previous widgets
         for w in self.res_frm.winfo_children():
             w.destroy()
 
         mode = self.resize_mode.get()
-        ttk.Radiobutton(self.res_frm, text="原图", value="none",
+        ttk.Radiobutton(self.res_frm, text="Original", value="none",
                         variable=self.resize_mode,
-                        command=self.build_resize_ui).grid(row=0, column=0, sticky="w")  # Original
-        ttk.Radiobutton(self.res_frm, text="长边固定", value="long_edge",
+                        command=self.build_resize_ui).grid(row=0, column=0, sticky="w")
+        ttk.Radiobutton(self.res_frm, text="Fixed long edge", value="long_edge",
                         variable=self.resize_mode,
-                        command=self.build_resize_ui).grid(row=0, column=1, sticky="w")  # Fixed long edge
-        ttk.Radiobutton(self.res_frm, text="自定义宽高", value="wh",
+                        command=self.build_resize_ui).grid(row=0, column=1, sticky="w")
+        ttk.Radiobutton(self.res_frm, text="Custom size", value="wh",
                         variable=self.resize_mode,
-                        command=self.build_resize_ui).grid(row=0, column=2, sticky="w")  # Custom size
+                        command=self.build_resize_ui).grid(row=0, column=2, sticky="w")
 
         if mode == "long_edge":
-            ttk.Label(self.res_frm, text="长边像素：").grid(row=1, column=0, sticky="e")  # Long edge(px):
+            ttk.Label(self.res_frm, text="Long edge(px):").grid(row=1, column=0, sticky="e")
             ttk.Spinbox(self.res_frm, from_=1, to=9999,
                         textvariable=self.long_edge, width=6).grid(row=1, column=1, sticky="w")
         elif mode == "wh":
-            ttk.Label(self.res_frm, text="宽：").grid(row=1, column=0, sticky="e")  # Width:
+            ttk.Label(self.res_frm, text="Width:").grid(row=1, column=0, sticky="e")
             ttk.Spinbox(self.res_frm, from_=1, to=9999,
                         textvariable=self.width, width=6).grid(row=1, column=1, sticky="w")
-            ttk.Label(self.res_frm, text="高：").grid(row=1, column=2, sticky="e")  # Height:
+            ttk.Label(self.res_frm, text="Height:").grid(row=1, column=2, sticky="e")
             ttk.Spinbox(self.res_frm, from_=1, to=9999,
                         textvariable=self.height, width=6).grid(row=1, column=3, sticky="w")
 
     def on_fmt_change(self, *_):
-        """格式改变时刷新 UI（可扩展）
-        Refresh UI when format changes (for extension)
-        """
+        """Refresh UI when format changes (for extension)"""
         pass
 
     def choose_dir(self):
-        # 选择保存目录 / Choose save directory
+        # Choose save directory
         d = filedialog.askdirectory(initialdir=self.save_dir.get())
         if d:
             self.save_dir.set(d)
 
     def check_clipboard(self):
-        # 检查剪贴板是否有图片 / Check if clipboard has image
+        # Check if clipboard has image
         im = get_clipboard_image()
         if im is not None:
-            self.status_lbl.config(text="✅ 已检测到剪贴板图片", foreground="green")  # Image detected
+            self.status_lbl.config(text="✅ Image detected in clipboard", foreground="green")
             self.btn_save.state(["!disabled"])
         else:
-            self.status_lbl.config(text="❌ 剪贴板无图片", foreground="red")  # No image in clipboard
+            self.status_lbl.config(text="❌ No image in clipboard", foreground="red")
             self.btn_save.state(["disabled"])
         self.after(1000, self.check_clipboard)
 
     def save_image(self):
-        # 保存图片 / Save image
+        # Save image
         im = get_clipboard_image()
         if im is None:
-            messagebox.showerror("错误", "剪贴板无图片")  # No image in clipboard
+            messagebox.showerror("Error", "No image in clipboard")
             return
 
-        # 分辨率处理 / Resolution processing
+        # Resolution processing
         mode = self.resize_mode.get()
         if mode == "long_edge":
             im.thumbnail((self.long_edge.get(), self.long_edge.get()), Image.LANCZOS)
         elif mode == "wh":
             im = im.resize((self.width.get(), self.height.get()), Image.LANCZOS)
 
-        # 目录 / 文件名 / Directory & file name
+        # Directory & file name
         directory = pathlib.Path(self.save_dir.get())
         directory.mkdir(parents=True, exist_ok=True)
 
@@ -198,22 +193,21 @@ class App(tk.Tk):
             path = directory / f"{name}_{counter}.{ext}"
             counter += 1
 
-        # 保存 / Save
+        # Save
         try:
             if ext.lower() in ("jpg", "jpeg"):
                 im = im.convert("RGB")
             im.save(path)
         except Exception as e:
-            messagebox.showerror("保存失败", str(e))  # Save failed
+            messagebox.showerror("Save failed", str(e))
             return
 
-        # 记住目录 / Remember directory
+        # Remember directory
         self.cfg["last_dir"] = str(directory)
         save_config(self.cfg)
 
-        messagebox.showinfo("成功", f"已保存：\n{path}")  # Saved successfully
+        messagebox.showinfo("Success", f"Saved:\n{path}")
 
-# ---------- 启动 ---------- 
 # ---------- Entry Point ----------
 if __name__ == "__main__":
     import sys
